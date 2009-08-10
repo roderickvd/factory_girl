@@ -48,6 +48,10 @@ describe Factory do
       @factory.default_strategy.should == :create
     end
 
+    it "should not be a singleton" do
+      @factory.singleton?.should == false
+    end
+
     it "should not allow the same attribute to be added twice" do
       lambda {
         2.times { @factory.add_attribute :first_name }
@@ -409,6 +413,28 @@ describe Factory do
     it "should create a new factory with a specified default strategy" do
       factory = Factory.define(:object, :default_strategy => :stub) {}
       factory.default_strategy.should == :stub
+    end
+  end
+
+  describe 'defining a factory with a singleton parameter' do
+    before do
+      @factory = Factory.define(:user, :singleton => true) do |u|
+        u.first_name 'John'
+        u.last_name 'Doe'
+        u.email 'johndoe@example.com'
+      end
+    end
+
+    it "should create a new factory as a singleton" do
+      @factory.singleton?.should == true
+    end
+
+    it "should create a single instance" do
+      lambda {
+        2.times do
+          @factory.run(Factory::Proxy::Create, {})
+        end
+      }.should change(User, :count).by(1)
     end
   end
 

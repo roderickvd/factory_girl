@@ -19,6 +19,7 @@ class Factory
 
   attr_reader :factory_name #:nodoc:
   attr_reader :attributes #:nodoc:
+  attr_accessor :singletons #:nodoc:
 
   # Defines a new factory that can be used by the build strategies (create and
   # build) to build new objects.
@@ -62,9 +63,14 @@ class Factory
     @options[:default_strategy] || :create
   end
 
+  def singleton? #:nodoc:
+    @options[:singleton] || false
+  end
+
   def initialize (name, options = {}) #:nodoc:
     assert_valid_options(options)
     @factory_name = factory_name_for(name)
+    @singletons   = {}
     @options      = options      
     @attributes   = []
   end
@@ -236,7 +242,7 @@ class Factory
   def self.create (name, overrides = {})
     factory_by_name(name).run(Proxy::Create, overrides)
   end
-  
+
   # Generates and returns an object with all attributes from this factory
   # stubbed out. Attributes can be individually overridden by passing in a Hash
   # of attribute => value pairs.
@@ -281,6 +287,8 @@ class Factory
   end
 
   def run (proxy_class, overrides) #:nodoc:
+    return singletons[factory_name] if @options[:singleton] && singletons[factory_name]
+
     proxy = proxy_class.new(build_class)
     overrides = symbolize_keys(overrides)
     overrides.each {|attr, val| proxy.set(attr, val) }
@@ -290,7 +298,13 @@ class Factory
         attribute.add_to(proxy)
       end
     end
-    proxy.result
+    result = proxy.result
+
+    if @options[:singleton]
+      singletons[factory_name] = result
+    end
+
+    result
   end
 
   private
@@ -320,7 +334,7 @@ class Factory
   end
 
   def assert_valid_options(options)
-    invalid_keys = options.keys - [:class, :parent, :default_strategy] 
+    invalid_keys = options.keys - [:class, :parent, :default_strategy, :singleton]
     unless invalid_keys == []
       raise ArgumentError, "Unknown arguments: #{invalid_keys.inspect}"
     end
