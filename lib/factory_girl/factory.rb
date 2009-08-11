@@ -286,8 +286,23 @@ class Factory
     end
   end
 
+  def find_singleton
+    if singletons[factory_name]
+      singleton = singletons[factory_name]
+      begin
+        singleton.reload if singleton.respond_to?(:reload)
+      rescue ActiveRecord::RecordNotFound
+        # singleton has been deleted
+        singleton = nil
+      end
+    end
+  end
+
   def run (proxy_class, overrides) #:nodoc:
-    return singletons[factory_name] if @options[:singleton] && singletons[factory_name]
+    if singleton?
+      singleton = find_singleton
+      return singleton if singleton
+    end
 
     proxy = proxy_class.new(build_class)
     overrides = symbolize_keys(overrides)
@@ -300,7 +315,7 @@ class Factory
     end
     result = proxy.result
 
-    if @options[:singleton]
+    if singleton?
       singletons[factory_name] = result
     end
 

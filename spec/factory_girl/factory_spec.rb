@@ -436,6 +436,24 @@ describe Factory do
         end
       }.should change(User, :count).by(1)
     end
+
+    it "should reload if an instance has changed" do
+      new_email = "changeme@example.com"
+
+      first_instance = @factory.run(Factory::Proxy::Create, {})
+      User.update_all("email = '#{new_email}'")
+
+      second_instance = @factory.run(Factory::Proxy::Create, {})
+      second_instance.email.should == new_email
+    end
+
+    it "should recreate if an instance has been destroyed" do
+      first_instance = @factory.run(Factory::Proxy::Create, {})
+      first_instance.destroy
+
+      second_instance = @factory.run(Factory::Proxy::Create, {})
+      second_instance.id.should_not == first_instance.id
+    end
   end
 
   def self.in_directory_with_files(*files)
