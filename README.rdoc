@@ -191,6 +191,17 @@ a particular factory:
     f.sequence(:email) {|n| "person#{n}@example.com" }
   end
 
+== Singletons
+
+Unique instances (for example, a fixed set of movie genres) can be generated
+using singletons. Singletons are defined by passing the :singleton => true
+parameter to Factory.define:
+
+  # Defines a new singleton
+  Factory.define :comedy, :class => Genre, :singleton => true do |g|
+    g.name 'Comedy'
+  end
+
 == Alternate Syntaxes
 
 Users' tastes for syntax vary dramatically, but most users are looking for a common feature set. Because of this, factory_girl supports "syntax layers" which provide alternate interfaces. See Factory::Syntax for information about the various layers available.
